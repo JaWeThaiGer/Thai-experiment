@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+	<!-- NEW: charset is required for Thai script to display correctly -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="jspsych-6.3.1/css/jspsych.css">
+	<link rel="stylesheet" href="taboo-resources/informed-consent.css">
+	<!-- NEW: Thai web font for consistent rendering across devices -->
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;700&display=swap">
+
+	</link>
+	<style>
+		/* NEW: Thai font */
+		body,
+		.jspsych-display-element,
+		input,
+		button {
+			font-family: 'Noto Sans Thai', 'Open Sans', 'Arial', sans-serif;
+		}
+
+		.stimulus {
+			font-size: 40px;
+		}
+
+		ul {
+			display: inline-block;
+			text-align: left;
+		}
+
+
+		table {
+			margin-left: auto;
+			margin-right: auto;
+		}
+
+		td {
+			text-align: left;
+		}
+
+		table,
+		th,
+		td {
+			border: 1px solid black;
+			border-collapse: collapse;
+		}
+
+		td {
+			padding: 15px;
+		}
+
+		td {
+			padding: 10px;
+		}
+
+		#items tr:nth-child(even) {
+			background-color: #f2f2f2;
+		}
+
+		.jspsych-btn {
+			margin-bottom: 100px;
+		}
+
+
+		input[type="radio"] {
+			-ms-transform: scale(2);
+			/* IE 9 */
+			-webkit-transform: scale(2);
+			/* Chrome, Safari, Opera */
+			transform: scale(2);
+		}
+
+		/* NEW: familiarization audio player */
+		audio {
+			width: 100%;
+			max-width: 500px;
+			margin: 20px 0;
+		}
+
+		.jspsych-btn:disabled {
+			opacity: 0.4;
+			cursor: not-allowed;
+		}
+	</style>
+
+</head>
+<!-- add JS psych -->
+<script src="jspsych-6.3.1/jspsych.js"></script>
+<script src="jspsych-6.3.1/plugins/jspsych-html-keyboard-response.js"></script>
+<script src="jspsych-6.3.1/plugins/jspsych-html-button-response.js"></script>
+<script src="jspsych-6.3.1/plugins/jspsych-survey-text.js"></script>
+<script src="jspsych-6.3.1/plugins/jspsych-survey-text_MODIFIED.js"></script>
+<script src="jspsych-6.3.1/plugins/jspsych-survey-multi-choice.js"></script>
+<script src="jspsych-6.3.1/plugins/jspsych-fullscreen.js"></script>
+<script src="jspsych-6.3.1/plugins/jspsych-call-function.js"></script>
+<script src="jspsych-6.3.1/plugins/jspsych-external-html.js"></script>
+<script src="jspsych-6.3.1/plugins/jspsych-html-slider-response.js"></script>
+<!-- add jsquery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+<!-- add stimuli -->
+<script src="taboo-resources/thde_production_stimuli.js"></script>
+<!-- add okay and notokay functions -->
+<script src="taboo-resources/informed-consent.js"></script>
+<!-- Check browser -->
+<script src="taboo-resources/browserCheck.js"></script>
+<script>
+	// NEW: fallback consent functions, used only if taboo-resources/informed-consent.js is missing
+	if (typeof okay !== 'function') {
+		window.okay = function () { document.getElementById('start').disabled = false; };
+	}
+	if (typeof notokay !== 'function') {
+		window.notokay = function () { document.getElementById('start').disabled = true; };
+	}
+</script>
+<script>
+	/* ================= SETTINGS ================= */
+	// NEW: DataPipe experiment ID (from pipe.jspsych.org). Leave empty ("") to use save_data.php as in the original.
+	var DATAPIPE_EXPERIMENT_ID = "5sSeGCqRr5RI";
+	/* ============================================ */
+
+	/* start the experiment */
+
+
+	var timeline = [];
+
+	// NEW: allowed characters in free-text answers = Latin letters + Thai block (U+0E00–U+0E7F)
+	var LETTERS_TH_LAT = "[A-Za-z\\u0E00-\\u0E7F]+";
+	// NEW: digits = Arabic + Thai digits (๐–๙)
+	var DIGITS_TH_LAT = "[0-9\\u0E50-\\u0E59]+";
+
+
+	/* get ID */
+
+	function getXMLHttp() {
+		var xmlHttp
+		try {
+			xmlHttp = new XMLHttpRequest();
+		} catch (e) {
+			try {
+				xmlHttp = new ActiveXObject("Msxml2.XMLHTTP");
+			} catch (e) {
+				try {
+					xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+				} catch (e) {
+					alert("AJAX not supported.")
+					return false;
+				}
+			}
+		}
+		return xmlHttp;
+	}
+
+
+	// Read ID from the query string
+	const urlParams = new Proxy(new URLSearchParams(window.location.search), {
+		get: (searchParams, prop) => searchParams.get(prop),
+	});
+	// CHANGED: list assignment
+	// 1) ?ID=0 or ?ID=1 in the link -> that list (as in the original)
+	// 2) no ID in the link + DataPipe ID set -> DataPipe condition assignment (alternates 0, 1, 0, 1 ...)
+	// 3) otherwise list 0 (as in the original)
+	function startExperiment() {
+		if (urlParams.ID !== null) {
+			runExperiment(parseInt(urlParams.ID));
+		} else if (DATAPIPE_EXPERIMENT_ID) {
+			fetch("https://pipe.jspsych.org/api/condition/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ experimentID: DATAPIPE_EXPERIMENT_ID })
+			})
+				.then(function (r) { return r.json(); })
+				.then(function (d) { runExperiment(d.condition % 2); })
+				.catch(function () { runExperiment(Math.floor(Math.random() * 2)); });
+		} else {
+			runExperiment(0);
+		}
+	}
+
+	function runExperiment(ID) {
+
+
+	/* switch to full screen */
+
+	var welcome = {
+		type: "html-keyboard-response",
+		stimulus: "<p>ยินดีต้อนรับสู่การศึกษาวิจัยนี้!</p><p>กดปุ่มใดก็ได้บนแป้นพิมพ์เพื่อเริ่มต้น</p>"
+	};
+	/* push the welcome message onto the timeline */
+	timeline.push(welcome);
+
+	var informed_consent = {
+		type: 'external-html',
+		url: "taboo-resources/informedconsent_thde_production.html",
+		cont_btn: "start"
+	};
+
+	timeline.push(informed_consent);
+
+
+	// CHANGED: Thai translation; student ID (matricola) removed; patterns accept Thai + Latin
+	// Page 1: age + native language (free text)
+	var demographics = {
+		type: 'survey-text',
+		preamble: "ขอบคุณที่ตกลงเข้าร่วมการศึกษาวิจัยนี้! <br> ก่อนเริ่ม เราขอเก็บข้อมูลพื้นฐานบางประการของผู้เข้าร่วม คำตอบของคุณจะไม่เปิดเผยตัวตนโดยสิ้นเชิง",
+		questions: [
+			{ prompt: "อายุของคุณ: (ใช้ตัวเลขเท่านั้น)", required: true, pattern: DIGITS_TH_LAT, name: "age" },
+			{ prompt: "ภาษาแม่ของคุณ: <i>(ใช้ตัวอักษรเท่านั้น)</i>", required: true, pattern: LETTERS_TH_LAT, name: "language" },
+		],
+		button_label: "ถัดไป"
+	};
+
+	timeline.push(demographics);
+
+	// NEW Page 2: gender + other languages as click choices
+	var demographics_choice = {
+		type: 'survey-multi-choice',
+		questions: [
+			{ prompt: "เพศของคุณ", options: ["หญิง", "ชาย", "อื่น ๆ", "ไม่ต้องการระบุ"], required: true, name: "gender" },
+			{ prompt: "นอกจากภาษาไทยแล้ว คุณพูดภาษาอื่นได้หรือไม่ หรือเคยเรียนภาษาอื่นในช่วงใดช่วงหนึ่งของชีวิตหรือไม่", options: ["ใช่", "ไม่ ฉันพูดได้เฉพาะภาษาไทย"], required: true, name: "other_lang" },
+		],
+		button_label: "ถัดไป"
+	};
+
+	timeline.push(demographics_choice);
+
+	// NEW Page 3: only shown if "ใช่" (yes) was chosen for other languages
+	var demographics_which = {
+		timeline: [{
+			type: 'survey-text',
+			questions: [
+				{ prompt: "คุณพูดหรือเคยเรียนภาษาอะไรบ้าง", required: true, name: "which_other_lang" },
+			],
+			button_label: "ถัดไป"
+		}],
+		conditional_function: function () {
+			var r = jsPsych.data.get().last(1).values()[0].response;
+			return r && r.other_lang === "ใช่";
+		}
+	};
+
+	timeline.push(demographics_which);
+
+
+	// CHANGED: Thai instruction text (from "Texte Experimet.docx")
+	var instruction = {
+		type: 'html-button-response',
+		stimulus: '<div style="max-width: 1000px;text-align:left;">' +
+			'<p align="center"><b><h2>คำแนะนำ</h2></b></p>' +
+			'<p align="center"><b><h3 style="color:red";>โปรดอ่านคำแนะนำ</h3></b></p>' +
+			'<p align="left">ก่อนเริ่ม คุณจะได้ฟังเสียงพูดภาษาเยอรมันประมาณ <b>1 นาที</b> กรุณาฟังตามธรรมชาติ โดยไม่จำเป็นต้องเข้าใจหรือจดจำเนื้อหา</p>' +
+			'<p align="left">จากนั้น คุณจะเห็นคำภาษาไทย <b>12 คำ</b> สำหรับแต่ละคำ กรุณาเขียนคำตอบ <b>3 คำ</b> ที่คุณคิดว่าอาจเป็นคำภาษาเยอรมัน โดยเขียน <b>ด้วยอักษรไทย</b></p>' +
+			'<p align="left">เรา <b>ไม่ต้องการคำแปลที่ถูกต้อง</b> แต่ต้องการการคาดเดาตามความรู้สึกของคุณ กรุณา <b>อย่าใช้</b> โปรแกรมแปลภาษา พจนานุกรม หรือภาษาอื่นที่คุณรู้จัก</p>' +
+			'<p align="left">พยายามเขียนให้คำตอบ <b>ฟังดูเหมือนคำภาษาเยอรมัน</b> ไม่ใช่คำภาษาไทยหรือคำจริงจากภาษาอื่น และไม่ใช่ตัวอักษรที่พิมพ์แบบสุ่ม</p>' +
+			'<p align="left"><b>ตัวอย่าง</b></p>' +
+			'<p align="left">คำเป้าหมาย: <u><b>แก้ว</b></u></p>' +
+			'<p align="left">&#10004; <u>กรุนชเทิน</u>&nbsp;&nbsp; &#10004; <u>บวร์ทซ์</u>&nbsp;&nbsp; &#10004; <u>คารุม</u></p>' +
+			'<p align="left">&#10008; <u>แก้ว</u>&nbsp;&nbsp; &#10008; <u>glass</u>&nbsp;&nbsp; &#10008; <u>ฟหกด่าสว</u></p>' +
+			"</div>",
+		choices: ['ถัดไป']
+	};
+
+	timeline.push(instruction);
+
+
+	/* ---------- NEW: familiarization (German audio, ca. 1 min) ---------- */
+
+	var audio_play_count = 0;
+	var audio_completed = false;
+	var audio_error = false;
+
+	var familiarization_intro = {
+		type: 'html-button-response',
+		stimulus: '<div style="max-width: 800px;">' +
+			'<h2>ส่วนที่ 1: ฟังเสียงภาษาเยอรมัน</h2>' +
+			'<p>ต่อไป คุณจะได้ฟังเสียงพูดภาษาเยอรมันประมาณ 1 นาที</p>' +
+			'<p><b>กรุณาเปิดเสียงหรือใช้หูฟัง</b></p>' +
+			'<p>กรุณาฟังตามธรรมชาติ ไม่จำเป็นต้องเข้าใจหรือจดจำเนื้อหา</p>' +
+			'</div>',
+		choices: ['เริ่มฟัง'],
+		data: { trial_part: 'familiarization_intro' }
+	};
+
+	timeline.push(familiarization_intro);
+
+	// Audio with native controls (play / pause / replay).
+	// "Continue" is enabled only after the audio has been played to the end once.
+	var familiarization_audio = {
+		type: 'html-button-response',
+		stimulus: '<div style="max-width: 800px;">' +
+			'<h2>ส่วนที่ 1: ฟังเสียงภาษาเยอรมัน</h2>' +
+			'<p>กดปุ่มเล่น &#9654; เพื่อฟังเสียง</p>' +
+			'<audio id="familiarization-audio" controls controlsList="nodownload noplaybackrate" preload="auto">' +
+			'<source src="taboo-resources/familiarization.mp3" type="audio/mpeg">' +
+			'</audio>' +
+			'<p>คุณสามารถหยุดชั่วคราวหรือฟังซ้ำได้</p>' +
+			'<p style="color:grey;">ปุ่ม "ถัดไป" จะกดได้เมื่อฟังจบแล้ว</p>' +
+			'</div>',
+		choices: ['ถัดไป'],
+		data: { trial_part: 'familiarization_audio' },
+		on_load: function () {
+			var btn = document.querySelector('#jspsych-html-button-response-button-0 button');
+			var audio = document.getElementById('familiarization-audio');
+			btn.disabled = true;
+			audio.addEventListener('play', function () {
+				if (audio.currentTime < 0.5) { audio_play_count++; }
+			});
+			audio.addEventListener('ended', function () {
+				audio_completed = true;
+				btn.disabled = false;
+			});
+			// fallback: if the file cannot be loaded, do not block the participant
+			audio.addEventListener('error', function () {
+				audio_error = true;
+				btn.disabled = false;
+			}, true);
+		},
+		on_finish: function (data) {
+			var audio = document.getElementById('familiarization-audio');
+			if (audio) { audio.pause(); }
+			data.audio_play_count = audio_play_count;
+			data.audio_completed = audio_completed;
+			data.audio_error = audio_error;
+		}
+	};
+
+	timeline.push(familiarization_audio);
+
+	var task_intro = {
+		type: 'html-button-response',
+		stimulus: '<div style="max-width: 800px;">' +
+			'<h2>ส่วนที่ 2: เขียนคำ</h2>' +
+			'<p>ต่อไป คุณจะเห็นคำภาษาไทย 12 คำ ทีละคำ</p>' +
+			'<p>สำหรับแต่ละคำ กรุณาเขียนคำ 3 คำ ที่คุณคิดว่าอาจเป็นคำภาษาเยอรมันที่มีความหมายเดียวกัน โดยเขียนด้วยอักษรไทย</p>' +
+			'<p>คุณสามารถใช้เวลาได้ตามสบาย</p>' +
+			'</div>',
+		choices: ['เริ่ม'],
+		data: { trial_part: 'task_intro' }
+	};
+
+	timeline.push(task_intro);
+
+	/* ---------- end familiarization ---------- */
+
+
+	// modular division to get the remainder from 0 to 7
+	// initID = 90
+	// id = (jatos.studyResultId - initID) % 8
+
+	batch_size = 12;
+	var stim_slice = stimuli.slice(ID * batch_size, ID * batch_size + batch_size);
+
+	var stimuli_select = jsPsych.randomization.repeat(stim_slice, 1);
+
+	var len = stimuli_select.length;
+	var tick = Array.apply(null, { length: len + 1 }).map(Function.call, Number);
+	tick.shift();
+
+	var i;
+	for (i = 0; i < len; i++) {
+		stimuli_select[i]["itemcount"] = tick[i];
+	}
+
+
+	/* Define Trials */
+	// CHANGED: Thai prompt; response pattern accepts Thai + Latin letters
+	var trials1 = {
+		timeline_variables: stimuli_select,
+		timeline: [
+			{
+				type: 'survey-text-mod',
+				questions: [
+					{ required: true, pattern: LETTERS_TH_LAT, name: "response1" },
+					{ required: true, pattern: LETTERS_TH_LAT, name: "response2" },
+					{ required: true, pattern: LETTERS_TH_LAT, name: "response3" },
+
+				],
+				preamble: function () {
+					return "<p><b>" + jsPsych.timelineVariable('itemcount', true) + "/" + len + "</b></p>" +
+						"<br><br><p class='preamble' align='center' style='font-size:150%;'>กรุณาเขียนคำภาษาเยอรมัน 3 คำ สำหรับคำว่า <br> <b>«" + jsPsych.timelineVariable('word', true) + "»</b>";
+				},
+				button_label: "ถัดไป",
+				post_trial_gap: 100,
+
+				data: jsPsych.timelineVariable('log'),
+
+				on_finish: function (data) {
+					data.key_press_decoded = jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press);
+				}
+			},
+		]
+	};
+
+
+	/* Define Blocks */
+	timeline.push(trials1);
+
+	// post-questionnaire: left out for now (to be added later)
+
+
+	/* Save Data */
+
+	// CHANGED: random 10-character ID, so that file names never collide
+	var subject_id = jsPsych.randomization.randomID(10);
+	jsPsych.data.addProperties({ subject_id: subject_id, list: ID });
+
+	// CHANGED: saves via DataPipe if an ID is set, otherwise via save_data.php as in the original.
+	// The experiment waits until saving is finished before showing the goodbye screen.
+	function saveData(name, data, done) {
+		if (DATAPIPE_EXPERIMENT_ID) {
+			fetch("https://pipe.jspsych.org/api/data/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ experimentID: DATAPIPE_EXPERIMENT_ID, filename: name, data: data })
+			}).then(function () { done(); }).catch(function () { done(); });
+		} else {
+			$.ajax({
+				type: 'post',
+				cache: false,
+				url: 'save_data.php',
+				data: { filename: name, filedata: data }
+			}).always(function () { done(); });
+		}
+	};
+
+
+	var save_data_block = {
+		type: 'call-function',
+		async: true,
+		func: function (done) {
+			saveData("thde_production_" + subject_id + ".csv", jsPsych.data.get().csv(), done);
+		},
+		timing_post_trial: 200,
+	};
+
+	timeline.push(save_data_block);
+
+
+	/* define a goodbye message */
+	var goodbye = {
+		type: "html-keyboard-response",
+		stimulus: "<p>ขอบคุณที่เข้าร่วมการศึกษาวิจัยนี้!</p>"
+	};
+	/* push the goodbye message onto the timeline */
+	timeline.push(goodbye);
+
+
+
+	jsPsych.init({
+		timeline: timeline,
+		default_iti: 100,
+	});
+
+	} // end runExperiment
+
+	startExperiment();
+
+
+
+</script>
+
+</html>

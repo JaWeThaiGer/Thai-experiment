@@ -1,0 +1,65 @@
+<div class="consent_form">
+
+	<head></head>
+	<body>
+		<!-- PLACEHOLDER: institution header (logo, institute, responsible researcher, e-mail) -->
+		<div class="headofpage">
+			<div><b>[PLACEHOLDER – Institution / Department]</b><br></div>
+			[PLACEHOLDER – Responsible researcher]<br>
+			<b>E-mail:</b> [PLACEHOLDER]
+		</div>
+
+		<div class="main_text">
+
+			<!-- PLACEHOLDER: full Thai consent text, to be inserted after ethics approval.
+			     Structure of the original (informedconsent_itde_production.html):
+			     Purpose of the study / Voluntary participation / Do I have to complete the study? /
+			     Procedure / Benefits / Risks / Compensation / Insurance / Privacy and data handling -->
+
+			<h1>[PLACEHOLDER – หนังสือแสดงความยินยอม / Informed consent]</h1>
+
+			<p style="color:red;"><b>[PLACEHOLDER – Consent text pending ethics approval]</b></p>
+
+		</div>
+
+		<br>
+		<br>
+		<br>
+		<h3 style="width: 80%; margin: auto;text-align: center;"><i>หลังจากอ่านและทำความเข้าใจเอกสารนี้แล้ว คุณต้องการเข้าร่วมการศึกษาวิจัยนี้หรือไม่</i></h3>
+
+		<br>
+		<br>
+
+</div>
+
+
+
+
+<div class="radio" style="width: 80%; margin: auto;text-align: left;">
+
+	<div>
+		<input type="radio" id="noconsent" name="drone" value="consent" onclick="notokay(this)">
+		<label for="noconsent"><b> ไม่</b> ฉันไม่ต้องการเข้าร่วมการศึกษาวิจัยนี้ </label>
+	</div>
+
+	<br>
+
+	<div>
+		<input type="radio" id="consent" name="drone" value="consent" onclick="okay(this)">
+		<label for="consent"><b> ใช่</b> ฉันต้องการเข้าร่วมการศึกษาวิจัยนี้ </label>
+	</div>
+	<br>
+	<br>
+
+	<button type="button" id="start" class="start"
+		style="  margin: 0;  position: absolute;  left: 50%;  transform: translateX(-50%); white-space: nowrap; margin-bottom: 100px;"
+		disabled=true>ถัดไป</button>
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+</body>
+</div>
