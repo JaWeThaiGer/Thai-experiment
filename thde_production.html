@@ -256,7 +256,7 @@
 			'<p align="left"><b>ตัวอย่าง</b></p>' +
 			'<p align="left">คำเป้าหมาย: <u><b>แก้ว</b></u></p>' +
 			'<p align="left">&#10004; <u>กรุนชเทิน</u>&nbsp;&nbsp; &#10004; <u>บวร์ทซ์</u>&nbsp;&nbsp; &#10004; <u>คารุม</u></p>' +
-			'<p align="left">&#10008; <u>แก้ว</u>&nbsp;&nbsp; &#10008; <u>glass</u>&nbsp;&nbsp; &#10008; <u>ฟหกด่าสว</u></p>' +
+			'<p align="left">&#10008; <u>แก้ว</u>&nbsp;&nbsp; &#10008; <u>glass</u>&nbsp;&nbsp; &#10008; ตัวอักษรแบบสุ่ม</p>' +
 			"</div>",
 		choices: ['ถัดไป']
 	};
@@ -396,7 +396,19 @@
 	/* Define Blocks */
 	timeline.push(trials1);
 
-	// post-questionnaire: left out for now (to be added later)
+	// Thai translation of the original post-questionnaire
+	var post_questionnare = {
+		type: 'survey-text',
+		preamble: "ขอบคุณ! <br> ก่อนจบการทดลอง เรามีคำถามอีกสองข้อ:",
+		questions: [
+
+			{ prompt: "คุณมีประสบการณ์เกี่ยวกับภาษาเยอรมันมาก่อนอย่างไรบ้าง", required: true, name: "previous_experience" },
+			{ prompt: "คุณใช้วิธีใดในการคิดคำตอบของคุณ", required: true, name: "response_method" },
+		],
+		button_label: "ถัดไป"
+	};
+
+	timeline.push(post_questionnare);
 
 
 	/* Save Data */

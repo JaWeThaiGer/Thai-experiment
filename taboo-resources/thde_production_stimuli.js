@@ -7,9 +7,9 @@
 //
 // Replacements agreed with F. Günther (Oct 2026):
 //   mela -> Mango (instead of Apfel), neve -> Regen (instead of Schnee)
-// STILL OPEN (please confirm):
-//   patata -> Mais (ข้าวโพด) used here; alternative: Kürbis (ฟักทอง)
-//   carne  -> Fleisch (เนื้อ), polysemy issue not yet resolved
+// Final decisions (Oct 2026):
+//   patata -> Mais (ข้าวโพด) instead of Kartoffel
+//   carne  -> Fleisch as เนื้อสัตว์ (animal meat) instead of เนื้อ, to avoid polysemy
 
 stimuli = [
 { word: 'สนามบิน', log: { word: 'สนามบิน', german: 'Flughafen', italian: 'aeroporto' } },
@@ -22,11 +22,11 @@ stimuli = [
 { word: 'ความฝัน', log: { word: 'ความฝัน', german: 'Traum', italian: 'sogno' } },
 { word: 'กุญแจ', log: { word: 'กุญแจ', german: 'Schlüssel', italian: 'chiave' } },
 { word: 'ฝน', log: { word: 'ฝน', german: 'Regen', italian: 'neve' } },
-{ word: 'ข้าวโพด', log: { word: 'ข้าวโพด', german: 'Mais', italian: 'patata' } }, // OPEN: Mais vs. Kürbis (ฟักทอง)
+{ word: 'ข้าวโพด', log: { word: 'ข้าวโพด', german: 'Mais', italian: 'patata' } },
 { word: 'ชายหาด', log: { word: 'ชายหาด', german: 'Strand', italian: 'spiaggia' } },
 { word: 'จันทร์', log: { word: 'จันทร์', german: 'Mond', italian: 'luna' } },
 { word: 'ผัก', log: { word: 'ผัก', german: 'Gemüse', italian: 'verdura' } },
-{ word: 'เนื้อ', log: { word: 'เนื้อ', german: 'Fleisch', italian: 'carne' } }, // OPEN: polysemy
+{ word: 'เนื้อสัตว์', log: { word: 'เนื้อสัตว์', german: 'Fleisch', italian: 'carne' } },
 { word: 'วันอาทิตย์', log: { word: 'วันอาทิตย์', german: 'Sonntag', italian: 'domenica' } },
 { word: 'ม้า', log: { word: 'ม้า', german: 'Pferd', italian: 'cavallo' } },
 { word: 'อ้วน', log: { word: 'อ้วน', german: 'fett', italian: 'grasso' } },
