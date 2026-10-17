@@ -78,6 +78,26 @@
 			margin: 20px 0;
 		}
 
+		/* NEW: rating scales (questionnaire) – keep the enlarged buttons from covering the labels */
+		.jspsych-survey-likert-opts input[type="radio"] {
+			transform: scale(1.5);
+			margin: 8px auto 14px auto;
+		}
+
+		.jspsych-survey-likert-opts li {
+			font-size: 14px;
+			line-height: 1.3;
+		}
+
+		.jspsych-survey-likert-statement {
+			margin-top: 1.5em;
+		}
+
+		.jspsych-display-element {
+			padding: 0 12px;
+			box-sizing: border-box;
+		}
+
 		.jspsych-btn:disabled {
 			opacity: 0.4;
 			cursor: not-allowed;
@@ -92,6 +112,7 @@
 <script src="jspsych-6.3.1/plugins/jspsych-survey-text.js"></script>
 <script src="jspsych-6.3.1/plugins/jspsych-survey-text_MODIFIED.js"></script>
 <script src="jspsych-6.3.1/plugins/jspsych-survey-multi-choice.js"></script>
+<script src="jspsych-6.3.1/plugins/jspsych-survey-likert.js"></script>
 <script src="jspsych-6.3.1/plugins/jspsych-fullscreen.js"></script>
 <script src="jspsych-6.3.1/plugins/jspsych-call-function.js"></script>
 <script src="jspsych-6.3.1/plugins/jspsych-external-html.js"></script>
@@ -199,48 +220,34 @@
 	timeline.push(informed_consent);
 
 
-	// CHANGED: Thai translation; student ID (matricola) removed; patterns accept Thai + Latin
-	// Page 1: age + native language (free text)
-	var demographics = {
-		type: 'survey-text',
-		preamble: "ขอบคุณที่ตกลงเข้าร่วมการศึกษาวิจัยนี้! <br> ก่อนเริ่ม เราขอเก็บข้อมูลพื้นฐานบางประการของผู้เข้าร่วม คำตอบของคุณจะไม่เปิดเผยตัวตนโดยสิ้นเชิง",
-		questions: [
-			{ prompt: "อายุของคุณ: (ใช้ตัวเลขเท่านั้น)", required: true, pattern: DIGITS_TH_LAT, name: "age" },
-			{ prompt: "ภาษาแม่ของคุณ: <i>(ใช้ตัวอักษรเท่านั้น)</i>", required: true, pattern: LETTERS_TH_LAT, name: "language" },
-		],
-		button_label: "ถัดไป"
-	};
-
-	timeline.push(demographics);
-
-	// NEW Page 2: gender + other languages as click choices
-	var demographics_choice = {
+	// NEW: Part 1 – Screening (questionnaire A1–A3), right after consent
+	// A1 = No  -> study ends (under 18)
+	// A2 = No  -> continues, flagged as non-native Thai (kept for separate analysis)
+	// A3 = Yes -> study ends (fluent in German)
+	var YES = "ใช่", NO = "ไม่ใช่";
+	var screening = {
 		type: 'survey-multi-choice',
+		preamble: "ขอบคุณที่ตกลงเข้าร่วมการศึกษาวิจัยนี้! <br> ก่อนเริ่ม กรุณาตอบคำถามสั้น ๆ ต่อไปนี้",
 		questions: [
-			{ prompt: "เพศของคุณ", options: ["หญิง", "ชาย", "อื่น ๆ", "ไม่ต้องการระบุ"], required: true, name: "gender" },
-			{ prompt: "นอกจากภาษาไทยแล้ว คุณพูดภาษาอื่นได้หรือไม่ หรือเคยเรียนภาษาอื่นในช่วงใดช่วงหนึ่งของชีวิตหรือไม่", options: ["ใช่", "ไม่ ฉันพูดได้เฉพาะภาษาไทย"], required: true, name: "other_lang" },
+			{ prompt: "คุณมีอายุ 18 ปีขึ้นไปหรือไม่", options: [YES, NO], required: true, horizontal: true, name: "A1_adult" },
+			{ prompt: "ภาษาไทยเป็นภาษาแม่ของคุณหรือไม่", options: [YES, NO], required: true, horizontal: true, name: "A2_thai_native" },
+			{ prompt: "คุณคิดว่าตัวเองพูดภาษาเยอรมันได้คล่องไหม", options: [YES, NO], required: true, horizontal: true, name: "A3_fluent_german" },
 		],
-		button_label: "ถัดไป"
-	};
-
-	timeline.push(demographics_choice);
-
-	// NEW Page 3: only shown if "ใช่" (yes) was chosen for other languages
-	var demographics_which = {
-		timeline: [{
-			type: 'survey-text',
-			questions: [
-				{ prompt: "คุณพูดหรือเคยเรียนภาษาอะไรบ้าง", required: true, name: "which_other_lang" },
-			],
-			button_label: "ถัดไป"
-		}],
-		conditional_function: function () {
-			var r = jsPsych.data.get().last(1).values()[0].response;
-			return r && r.other_lang === "ใช่";
+		button_label: "ถัดไป",
+		data: { trial_part: 'screening' },
+		on_finish: function (data) {
+			var r = data.response;
+			data.native_thai = (r.A2_thai_native === YES);
+			data.screened_out = (r.A1_adult === NO || r.A3_fluent_german === YES);
+			jsPsych.data.addProperties({ native_thai: data.native_thai });
+			if (data.screened_out) {
+				jsPsych.endExperiment("<p>ขอบคุณสำหรับความสนใจในการวิจัยนี้</p>" +
+					"<p>เสียดายที่คุณไม่ตรงตามเงื่อนไขของผู้เข้าร่วมการวิจัยนี้ คุณสามารถปิดหน้านี้ได้</p>");
+			}
 		}
 	};
 
-	timeline.push(demographics_which);
+	timeline.push(screening);
 
 
 	// CHANGED: Thai instruction text (from "Texte Experimet.docx")
@@ -399,7 +406,7 @@
 	// Thai translation of the original post-questionnaire
 	var post_questionnare = {
 		type: 'survey-text',
-		preamble: "ขอบคุณ! <br> ก่อนจบการทดลอง เรามีคำถามอีกสองข้อ:",
+		preamble: "ขอบคุณ! <br> ต่อไปเป็นคำถามสั้น ๆ สองข้อเกี่ยวกับงานที่คุณเพิ่งทำ:",
 		questions: [
 
 			{ prompt: "คุณมีประสบการณ์เกี่ยวกับภาษาเยอรมันมาก่อนอย่างไรบ้าง", required: true, name: "previous_experience" },
@@ -409,6 +416,125 @@
 	};
 
 	timeline.push(post_questionnare);
+
+	/* ---------- NEW: Questionnaire after the task (Parts 2 and 3) ---------- */
+
+	// Part 2: Demographics B1–B7
+	var demographics_choice = {
+		type: 'survey-multi-choice',
+		preamble: "เกือบเสร็จแล้ว! <br> ต่อไปนี้เป็นคำถามเกี่ยวกับตัวคุณ คำตอบของคุณจะไม่เปิดเผยตัวตน",
+		questions: [
+			{ prompt: "เพศ", options: ["หญิง", "ชาย", "อื่น ๆ", "ไม่ประสงค์จะระบุ"], required: true, name: "B1_gender" },
+			{ prompt: "คุณพักอาศัยอยู่ในพื้นที่แบบใด", options: ["เมืองใหญ่", "เมืองขนาดเล็ก", "หมู่บ้านหรือชนบท"], required: true, name: "B3_area" },
+			{ prompt: "คุณเคยเรียนภาษาเยอรมันหรือไม่", options: [YES, NO], required: true, horizontal: true, name: "B7_learned_german" },
+		],
+		button_label: "ถัดไป",
+		data: { trial_part: 'demographics' }
+	};
+	timeline.push(demographics_choice);
+
+	var demographics_text = {
+		type: 'survey-text',
+		questions: [
+			{ prompt: "อายุ (ปี)", required: true, pattern: DIGITS_TH_LAT, name: "B2_age" },
+			{ prompt: "ภาษาหรือภาษาถิ่นอื่นที่ใช้ที่บ้าน (ถ้ามี)", required: false, name: "B4_home_languages" },
+			{ prompt: "ภาษาอื่น ๆ ที่คุณรู้จัก (ถ้ามี)", required: false, name: "B5_other_languages" },
+		],
+		button_label: "ถัดไป",
+		data: { trial_part: 'demographics' }
+	};
+	timeline.push(demographics_text);
+
+	var demographics_english = {
+		type: 'survey-likert',
+		questions: [
+			{ prompt: "คุณใช้ภาษาอังกฤษได้ดีแค่ไหน", labels: ["1<br>ไม่ได้เลย", "2", "3", "4", "5<br>ดีมาก"], required: true, name: "B6_english" },
+		],
+		button_label: "ถัดไป",
+		data: { trial_part: 'demographics' }
+	};
+	timeline.push(demographics_english);
+
+	// Part 3: Language contact C1–C8 (5-point scales; saved as 0–4, score uses 1–5)
+	var SCALE_FREQ = ["ไม่เคยเลย", "นาน ๆ ครั้ง", "บางครั้ง", "บ่อย", "ทุกวันหรือเกือบทุกวัน"];
+	var SCALE_AMOUNT = ["ไม่มีเลย", "น้อยมาก", "ปานกลาง", "มาก", "มากที่สุด"];
+	var SCALE_STUDY = ["ไม่เคย", "น้อยกว่า 1 ปี", "1 ถึงน้อยกว่า 3 ปี", "3 ถึง 10 ปี", "มากกว่า 10 ปี"];
+	var SCALE_SOUND = ["ไม่คุ้นเคยเลย", "คุ้นเคยเล็กน้อย", "คุ้นเคยปานกลาง", "คุ้นเคย", "คุ้นเคยมาก"];
+
+	var contact_1 = {
+		type: 'survey-likert',
+		preamble: "<p style='max-width:700px;margin:auto;'>ในคำถามต่อไปนี้ \"ภาษายุโรป\" หมายถึงภาษาต่าง ๆ เช่น ภาษาอังกฤษ ภาษาเยอรมัน หรือภาษาฝรั่งเศส</p>",
+		questions: [
+			{ prompt: "คุณได้ยินภาษายุโรปในชีวิตประจำวันบ่อยแค่ไหน", labels: SCALE_FREQ, required: true, name: "C1" },
+			{ prompt: "คุณเห็นภาษายุโรปที่เป็นตัวหนังสือ (เช่น ป้าย โฆษณา อินเทอร์เน็ต) บ่อยแค่ไหน", labels: SCALE_FREQ, required: true, name: "C2" },
+			{ prompt: "คุณดูหรือฟังสื่อ (เช่น ภาพยนตร์ เพลง YouTube) ที่เป็นภาษายุโรปบ่อยแค่ไหน", labels: SCALE_FREQ, required: true, name: "C3" },
+			{ prompt: "คุณติดต่อกับนักท่องเที่ยวหรือผู้อาศัยชาวยุโรปมากแค่ไหน", labels: SCALE_AMOUNT, required: true, name: "C4" },
+			{ prompt: "งานหรือการเรียนของคุณเกี่ยวข้องกับภาษายุโรปหรือผู้ที่พูดภาษาเหล่านั้นมากแค่ไหน", labels: SCALE_AMOUNT, required: true, name: "C5" },
+		],
+		button_label: "ถัดไป",
+		data: { trial_part: 'contact' }
+	};
+	timeline.push(contact_1);
+
+	// C6 only if B7 = yes (otherwise set to "never" in the score)
+	var contact_c6 = {
+		timeline: [{
+			type: 'survey-likert',
+			questions: [
+				{ prompt: "คุณเคยเรียนภาษาเยอรมันอย่างเป็นระบบ (เช่น ในหลักสูตรหรือโรงเรียนสอนภาษา) นานเท่าไร", labels: SCALE_STUDY, required: true, name: "C6" },
+			],
+			button_label: "ถัดไป",
+			data: { trial_part: 'contact' }
+		}],
+		conditional_function: function () {
+			var d = jsPsych.data.get().filter({ trial_part: 'demographics', trial_type: 'survey-multi-choice' }).values()[0];
+			return d && d.response.B7_learned_german === YES;
+		}
+	};
+	timeline.push(contact_c6);
+
+	var contact_2 = {
+		type: 'survey-likert',
+		questions: [
+			{ prompt: "คุณเคยเรียนภาษายุโรป นานเท่าไร", labels: SCALE_STUDY, required: true, name: "C7" },
+			{ prompt: "คุณคุ้นเคยกับเสียงของภาษาเยอรมันมากแค่ไหน", labels: SCALE_SOUND, required: true, name: "C8" },
+		],
+		button_label: "ถัดไป",
+		data: { trial_part: 'contact' }
+	};
+	timeline.push(contact_2);
+
+	// Covariates K1–K2 (not part of the score)
+	var covariates = {
+		type: 'survey-multi-choice',
+		questions: [
+			{ prompt: "คุณคุ้นเคยกับอักษรละติน (A–Z) หรือไม่", options: [YES, NO], required: true, horizontal: true, name: "K1_latin_script" },
+			{ prompt: "คุณเคยเรียนภาษาบาลีหรือสันสกฤตหรือไม่", options: ["ไม่เคย", "เล็กน้อย", "เรียนอย่างจริงจัง"], required: true, name: "K2_pali_sanskrit" },
+		],
+		button_label: "ถัดไป",
+		data: { trial_part: 'covariates' }
+	};
+	timeline.push(covariates);
+
+	// Contact score = mean of C1–C8 on 1–5 (C6 = 1 "never" if skipped). Added to every data row.
+	var compute_score = {
+		type: 'call-function',
+		func: function () {
+			var items = {};
+			jsPsych.data.get().filter({ trial_part: 'contact' }).values().forEach(function (t) {
+				for (var k in t.response) { items[k] = t.response[k] + 1; }
+			});
+			var c6_skipped = !('C6' in items);
+			if (c6_skipped) { items.C6 = 1; }
+			var keys = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'];
+			var sum = 0;
+			keys.forEach(function (k) { sum += items[k]; });
+			jsPsych.data.addProperties({ contact_score: sum / keys.length, C6_skipped: c6_skipped });
+		}
+	};
+	timeline.push(compute_score);
+
+	/* ---------- end questionnaire ---------- */
 
 
 	/* Save Data */
